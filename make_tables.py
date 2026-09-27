@@ -470,6 +470,39 @@ def table_mar():
         f.write('\n'.join(lines))
 
 
+def table_mar_selection():
+    """Outcome prevalence among labelled vs unlabelled training patients
+    under random (main study) and risk-dependent label availability."""
+    a, m = load('mar.csv'), load('main.csv')
+    if a is None:
+        return
+
+    def prev(d):
+        S = int(d.n_silos.iloc[0])
+        lp = sum(d[f'silo{s}_labeled_pos'].sum() for s in range(S))
+        ln = sum(d[f'silo{s}_labeled'].sum() for s in range(S))
+        tp = sum(d[f'silo{s}_pos'].sum() for s in range(S))
+        tn = sum(d[f'silo{s}_n'].sum() for s in range(S))
+        return lp / ln, (tp - lp) / (tn - ln), ln / tn
+
+    lines = [r'\begin{tabularx}{\textwidth}{llCCC}', r'\toprule',
+             r'\textbf{Dataset} & \textbf{Label availability} & \textbf{Prevalence, labelled} & '
+             r'\textbf{Prevalence, unlabelled} & \textbf{Share labelled}\\', r'\midrule']
+    for ds, n in SUM_DS:
+        base = m[(m.dataset == ds) & (m.rho == 0.8) & (m.method == 'FedTGNN-SS') & (m.repeat < 5)]
+        if base.empty or a[a.dataset == ds].empty:
+            continue
+        rows = [('random within class (main study)', base)]
+        for st, lab in [('risk_beta=1', r'risk-dependent, $\beta=1.0$'), ('risk_beta=2.5', r'risk-dependent, $\beta=2.5$')]:
+            rows.append((lab, a[(a.dataset == ds) & (a.setting == st) & (a.method == 'FedTGNN-SS')]))
+        for i, (lab, d) in enumerate(rows):
+            pl, pu, sh = prev(d)
+            lines.append(f"{n if i == 0 else ''} & {lab} & {pl:.3f} & {pu:.3f} & {sh:.3f}\\\\")
+    lines += [r'\bottomrule', r'\end{tabularx}']
+    with open(os.path.join(TAB, 'mar_selection.tex'), 'w') as f:
+        f.write('\n'.join(lines))
+
+
 def table_tuned():
     t, m = load('tuned.csv'), load('main.csv')
     if t is None:
@@ -648,6 +681,7 @@ def main():
     table_recal()
     table_graph()
     table_mar()
+    table_mar_selection()
     table_tuned()
     if stats is not None:
         table_summary(df, stats, 0.8, 'auroc', 'summary_auroc')
