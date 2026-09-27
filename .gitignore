@@ -7,3 +7,5 @@ results/main_preds.csv.gz
 results/main_before_repair.csv
 results/_partial*
 results/run_all.log
+results/*_preds.csv.gz
+results/*.log
