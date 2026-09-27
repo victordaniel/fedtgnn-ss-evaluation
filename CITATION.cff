@@ -9,9 +9,5 @@ authors:
     given-names: G. Victor
     orcid: "https://orcid.org/0000-0003-1021-1576"
     affiliation: "School of Engineering, Anurag University, Hyderabad, India"
-  - family-names: M
-    given-names: Venkatesan
-    affiliation: "School of Engineering, Anurag University, Hyderabad, India"
-version: "1.0.0"
+version: "1.0.1"
 date-released: "2026-09-27"
-doi: "10.5281/zenodo.22987367"

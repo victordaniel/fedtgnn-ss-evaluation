@@ -37,8 +37,8 @@ bash run_all.sh               # ~10 h on a 4-core CPU; resumable
 `results/` contains the run-level metrics used in the paper. The per-patient test predictions (`main_preds.csv.gz`, used by `make_tables.py` for the calibration figure and by `repair_main.py`) are not included; `run.py main` regenerates them.
 
 ## Citation
-Daniel, G.V.; M, V. *Federated Semi-Supervised Graph Neural Networks for the Prediction of Gestational and Other Diabetes from Tabular Records: A Leakage-Controlled Evaluation.* Manuscript submitted to *Diagnostics* (MDPI), 2026.
+Daniel, G.V. *Federated Semi-Supervised Graph Neural Networks for the Prediction of Gestational and Other Diabetes from Tabular Records: A Leakage-Controlled Evaluation.* Manuscript submitted to *Diagnostics* (MDPI), 2026.
 
-Software: Daniel, G.V.; M, V. *FedTGNN-SS: leakage-controlled evaluation* (v1.0.0). Zenodo, 2026. https://doi.org/10.5281/zenodo.22987367
+Software: Daniel, G.V. *FedTGNN-SS: leakage-controlled evaluation* (v1.0.0). Zenodo, 2026. https://doi.org/10.5281/zenodo.22987367
 
 Seeds: the split for repeat *r*, fold *f* uses seed `2026 + 1000 r + f`. Every row of `results/*.csv` stores its seed and per-silo counts.

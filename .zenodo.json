@@ -3,10 +3,20 @@
   "upload_type": "software",
   "description": "Code, prespecified analysis protocol, leakage unit tests and run-level results accompanying the article 'Federated Semi-Supervised Graph Neural Networks for the Prediction of Gestational and Other Diabetes from Tabular Records: A Leakage-Controlled Evaluation'. No patient data are included; the datasets are available from Kaggle and the UCI Machine Learning Repository.",
   "creators": [
-    {"name": "Daniel, G. Victor", "affiliation": "School of Engineering, Anurag University, Hyderabad, India", "orcid": "0000-0003-1021-1576"},
-    {"name": "M, Venkatesan", "affiliation": "School of Engineering, Anurag University, Hyderabad, India"}
+    {
+      "name": "Daniel, G. Victor",
+      "affiliation": "School of Engineering, Anurag University, Hyderabad, India",
+      "orcid": "0000-0003-1021-1576"
+    }
   ],
   "license": "MIT",
-  "keywords": ["gestational diabetes mellitus", "federated learning", "graph neural networks", "semi-supervised learning", "clinical prediction models", "negative results"],
+  "keywords": [
+    "gestational diabetes mellitus",
+    "federated learning",
+    "graph neural networks",
+    "semi-supervised learning",
+    "clinical prediction models",
+    "negative results"
+  ],
   "access_right": "open"
 }
