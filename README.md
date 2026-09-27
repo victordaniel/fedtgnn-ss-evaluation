@@ -1,6 +1,6 @@
 # FedTGNN-SS: corrected, leakage-controlled experiment code
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22987367.svg)](https://doi.org/10.5281/zenodo.22987367)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22995893.svg)](https://doi.org/10.5281/zenodo.22995893)
 
 Code for *"Federated Semi-Supervised Graph Neural Networks for the Prediction of Gestational and Other Diabetes from Tabular Records: A Leakage-Controlled Evaluation"*.
 
@@ -41,6 +41,6 @@ bash run_all.sh               # ~10 h on a 4-core CPU; resumable
 ## Citation
 Daniel, G.V. *Federated Semi-Supervised Graph Neural Networks for the Prediction of Gestational and Other Diabetes from Tabular Records: A Leakage-Controlled Evaluation.* Manuscript submitted to *Diagnostics* (MDPI), 2026.
 
-Software: Daniel, G.V. *FedTGNN-SS: leakage-controlled evaluation* (v1.0.0). Zenodo, 2026. https://doi.org/10.5281/zenodo.22987367
+Software: Daniel, G.V. *FedTGNN-SS: leakage-controlled evaluation* (v1.1.0). Zenodo, 2026. https://doi.org/10.5281/zenodo.22995893
 
 Seeds: the split for repeat *r*, fold *f* uses seed `2026 + 1000 r + f`. Every row of `results/*.csv` stores its seed and per-silo counts.
