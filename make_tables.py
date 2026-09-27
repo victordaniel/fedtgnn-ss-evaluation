@@ -370,6 +370,37 @@ def table_leakage():
         f.write('\n'.join(lines))
 
 
+def table_recal():
+    s = load('recal_summary.csv')
+    if s is None:
+        return
+    lines = [r'\begin{tabularx}{\textwidth}{llLCCCC}', r'\toprule',
+             r'\textbf{Dataset} & \textbf{Model} & \textbf{Recalibration} & \textbf{Brier} & '
+             r'\textbf{Cal. intercept} & \textbf{Cal. slope} & \textbf{ECE}\\', r'\midrule']
+    order = ['None', 'Platt scaling', 'Temperature scaling']
+    for ds, n in SUM_DS:
+        d = s[s.dataset == ds]
+        if d.empty:
+            continue
+        first = True
+        for m in ['FedTGNN-SS', 'FedAvg-LR']:
+            for i, rc in enumerate(order):
+                x = d[(d.method == m) & (d.recalibration == rc)]
+                if x.empty:
+                    continue
+                x = x.iloc[0]
+                lines.append(f"{n if first else ''} & {m if i == 0 else ''} & {rc} & "
+                             f"{x.brier_mean:.3f} & {x.cal_intercept_mean:+.2f} & {x.cal_slope_mean:.2f} & "
+                             f"{x.ece_mean:.3f}\\\\")
+                first = False
+        lines.append(r'\midrule')
+    if lines[-1] == r'\midrule':
+        lines.pop()
+    lines += [r'\bottomrule', r'\end{tabularx}']
+    with open(os.path.join(TAB, 'recal.tex'), 'w') as f:
+        f.write('\n'.join(lines))
+
+
 # ---------------------------------------------------------------- figures
 def _style(ax):
     ax.grid(axis='y', color=GRID, linewidth=0.6)
@@ -513,6 +544,7 @@ def main():
     table_gdm_baseline()
     table_gdm_predictors()
     table_leakage()
+    table_recal()
     if stats is not None:
         table_summary(df, stats, 0.8, 'auroc', 'summary_auroc')
         table_summary(df, stats, 0.8, 'brier', 'summary_brier')

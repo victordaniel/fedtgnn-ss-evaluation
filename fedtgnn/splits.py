@@ -67,6 +67,26 @@ def mask_labels(silo, y, rho, rng):
     return np.array(sorted(lab), dtype=int), np.array(sorted(unl), dtype=int)
 
 
+def mask_labels_risk(silo, y, rho, score, rng, beta=1.5):
+    """Informative (covariate-dependent) label availability for the
+    sensitivity analysis: P(labelled) = sigmoid(a + beta * z), where z is
+    the standardised risk score within the silo and a is chosen so that the
+    expected labelled fraction is 1 - rho. The outcome itself is not used.
+    At least one patient per class is kept labelled."""
+    from scipy.optimize import brentq
+    s = score[silo]
+    z = (s - s.mean()) / (s.std() + 1e-8)
+    target = 1.0 - rho
+    a = brentq(lambda a: np.mean(1 / (1 + np.exp(-(a + beta * z)))) - target, -20, 20)
+    p = 1 / (1 + np.exp(-(a + beta * z)))
+    keep = rng.random(len(silo)) < p
+    for c in np.unique(y[silo]):
+        cls = (y[silo] == c)
+        if not (keep & cls).any():
+            keep[np.flatnonzero(cls)[rng.integers(cls.sum())]] = True
+    return np.sort(silo[keep]), np.sort(silo[~keep])
+
+
 def assign_to_silos(idx, silos, rng):
     """Eval patients arrive at a hospital independently of their outcome:
     assign each one to a silo with probability proportional to silo size."""
@@ -75,7 +95,7 @@ def assign_to_silos(idx, silos, rng):
 
 
 def make_splits(y, rho, n_silos, alpha, n_repeats=10, n_folds=5,
-                val_frac=0.15, base_seed=2026):
+                val_frac=0.15, base_seed=2026, risk_score=None, risk_beta=1.5):
     """Yield FoldSplit objects for repeated stratified K-fold CV.
 
     The outer partition and the silo partition depend only on
@@ -94,7 +114,11 @@ def make_splits(y, rho, n_silos, alpha, n_repeats=10, n_folds=5,
             rng = np.random.default_rng(seed)
             silos = dirichlet_partition(np.sort(tr), y, n_silos, alpha, rng)
             rng_mask = np.random.default_rng(seed + int(round(rho * 1000)))
-            lab, unl = zip(*[mask_labels(s, y, rho, rng_mask) for s in silos])
+            if risk_score is None:
+                lab, unl = zip(*[mask_labels(s, y, rho, rng_mask) for s in silos])
+            else:
+                lab, unl = zip(*[mask_labels_risk(s, y, rho, risk_score, rng_mask, beta=risk_beta)
+                                  for s in silos])
             val_silo = assign_to_silos(va, silos, rng)
             test_silo = assign_to_silos(te, silos, rng)
             counts = {}

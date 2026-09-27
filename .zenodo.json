@@ -1,7 +1,7 @@
 {
   "title": "FedTGNN-SS: leakage-controlled evaluation of federated semi-supervised graph neural networks for gestational and other diabetes prediction (code, protocol and results)",
   "upload_type": "software",
-  "description": "Code, prespecified analysis protocol, leakage unit tests and run-level results accompanying the article 'Federated Semi-Supervised Graph Neural Networks for the Prediction of Gestational and Other Diabetes from Tabular Records: A Leakage-Controlled Evaluation'. No patient data are included; the datasets are available from Kaggle and the UCI Machine Learning Repository.",
+  "description": "Code, prespecified analysis protocol, leakage unit tests and run-level results accompanying the article 'Do Federated Semi-Supervised Graph Neural Networks Improve Tabular Clinical Prediction? A Leakage-Controlled Evaluation in Diabetes'. No patient data are included; the datasets are available from Kaggle and the UCI Machine Learning Repository.",
   "creators": [
     {
       "name": "Daniel, G. Victor",

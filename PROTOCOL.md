@@ -67,3 +67,50 @@ These two analyses were added **after** the main results had been examined. They
    - L4: one cross-silo graph at inference.
 
    FedAvg-LR under L3 is included as a reference. Run with 5 repeats × 5 folds at ρ ∈ {0.1, 0.8} on GDM-early, Pima and Early-Stage. Paired differences from the correct protocol are summarised with 95% CIs (corrected resampled t-test).
+
+## Amendment 3 (27 September 2026, after the primary results were known): exploratory recalibration
+FedTGNN-SS and FedAvg-LR were re-run at ρ = 0.8 (10 × 5 folds; same partitions and seeds), with validation predictions stored (`run.py recal`). Platt scaling and temperature scaling are fitted on the validation predictions only and applied to the test fold (`recalibrate.py`). This analysis is exploratory and does not alter any primary result. Recalibration by a monotone map leaves AUROC unchanged.
+
+## Amendment 4 (27 September 2026, after the primary results were known): exploratory graph diagnostics
+`graph_analysis.py` describes the quality of the initial feature-space graph and of the refined (AGR) embedding graph:
+- edge homophily against its random baseline;
+- node purity, overall and by class;
+- the share of unlabelled patients with a labelled neighbour, and agreement with the labelled neighbours.
+
+It also evaluates a federated distance-weighted k-NN ensemble. The withheld outcomes are used only to describe the graphs, never for training. Runs: 3 repeats × 5 folds at ρ ∈ {0.1, 0.8}. Exploratory.
+
+## Amendment 5: prospectively specified sensitivity analyses, written after the primary results were known
+Written and committed on 27 September 2026, **before** either analysis below was run. These analyses were **not** part of the original prespecified protocol. They were specified in advance of their own results, after the primary results were known, in response to anticipated reviewer objections. Neither alters the primary analysis or its conclusion rule.
+
+### 5a. Informative (risk-dependent) label missingness (`run.py mar`)
+- **Mechanism.** Within each silo, patient *i* keeps its training label with probability sigmoid(a + β·z_i).
+  - z_i is the silo-standardised risk score: the mean of standardised established risk factors, each positively associated with the outcome a priori.
+  - a is solved numerically so that the expected labelled fraction equals 1 − ρ.
+  - Labels are Bernoulli draws, with at least one labelled patient per class guaranteed.
+  - The outcome is never used to define z.
+- **Risk factors.**
+  - GDM-early: Age, BMI, Family History, PCOS, Prediabetes, Large Child or Birth Default. **OGTT is not used.**
+  - Pima: Glucose, BMI, Age.
+  - Early-Stage: Polyuria, Polydipsia, Age.
+- **Strengths:** β = 1.0 (moderate) and β = 2.5 (strong). Everything else is identical to the main study: Dirichlet α = 0.5, S as in the main study, validation hold-out, inductive graphs, and the threshold rule.
+- **Scarcity:** ρ = 0.8.
+- **Runs:** 5 repeats × 5 folds, with the main-study partition seeds (`2026 + 1000 r + f`).
+- **Methods:** FedTGNN-SS, FedAvg-LR, FedAvg-MLP, FedEns-RF, FedAvg-GCN, FedMatch-tab, Local-TGNN.
+- **Endpoints:** test AUROC, Brier score and calibration slope. The comparison is FedTGNN-SS minus each comparator, with the paired difference and a 95% CI from the corrected resampled t-test. Results are reported descriptively, without significance claims.
+
+### 5b. Baseline tuning sensitivity (`run.py tuned`)
+- **Methods tuned:** FedAvg-LR, FedAvg-MLP, FedEns-RF, FedEns-XGB, FedEns-SVM.
+- **Grids** (fixed; `fedtgnn/tuned.py`):
+  - LR: C ∈ {0.01, 0.1, 1, 10}.
+  - MLP: hidden ∈ {32, 64, 128} × learning rate ∈ {0.001, 0.005, 0.01}.
+  - RF: max_depth ∈ {None, 5, 10} × min_samples_leaf ∈ {1, 5}.
+  - XGB: max_depth ∈ {3, 6} × n_estimators ∈ {100, 300} × learning_rate ∈ {0.05, 0.3}.
+  - SVM: C ∈ {0.1, 1, 10} × gamma ∈ {scale, 0.01, 0.1}.
+- **Selection rule:** the configuration with the highest AUROC on the validation set of the same repeat and fold. Ties go to the first configuration in grid order. The test fold is never consulted. The decision threshold is then chosen on the same validation set, as in the main study.
+- **Scarcity:** ρ ∈ {0.1, 0.8}.
+- **Runs:** 5 repeats × 5 folds, with the main-study partitions.
+- **Comparison:** FedTGNN-SS from the main study, on the identical repeat/fold partitions (repeats 0–4), minus each tuned baseline. Test AUROC, with the paired difference and a 95% CI from the corrected resampled t-test. Descriptive.
+- **Note on fairness:** the FedTGNN-SS configuration was inherited from earlier work on these datasets, which may have influenced it. This analysis gives the main baselines an equal, limited, validation-only tuning budget.
+
+### Stopping rule
+After Amendments 3–5 (recalibration, graph diagnostics, 5a, 5b), no further experiments will be added, unless one of them reveals a substantive methodological problem.

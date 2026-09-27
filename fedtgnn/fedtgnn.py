@@ -185,9 +185,11 @@ def _global_graph_inference(model, silos, k):
 
 
 # ------------------------------------------------------------------ train
-def train_fedtgnn(ctx, cfg=FedTGNNConfig(), seed=0, diag=None):
+def train_fedtgnn(ctx, cfg=FedTGNNConfig(), seed=0, diag=None, graph_hook=None):
     """Train FedTGNN-SS on a FoldContext. Returns dict name -> (idx, prob)
-    for 'val' and 'test', plus cost statistics in '_meta'."""
+    for 'val' and 'test', plus cost statistics in '_meta'.
+    graph_hook(silo, edge_index, stage) is called with stage='initial' and
+    stage='refined' (diagnostic use only; it cannot affect training)."""
     torch.manual_seed(seed)
     np.random.seed(seed)
     t0 = time.time()
@@ -199,6 +201,8 @@ def train_fedtgnn(ctx, cfg=FedTGNNConfig(), seed=0, diag=None):
         s.y_work = s.y.clone()
         s.w_pl = torch.zeros(len(s.y))
         s.is_pl = torch.zeros(len(s.y), dtype=torch.bool)
+        if graph_hook is not None:
+            graph_hook(s, s.ei, 'initial')
     model0 = FedTGNNEncoder(ctx.d, cfg.hidden, cfg.dropout, cfg.edge_attention)
     models = [copy.deepcopy(model0) for _ in silos]
     g_state = copy.deepcopy(model0.state_dict())
@@ -263,6 +267,8 @@ def train_fedtgnn(ctx, cfg=FedTGNNConfig(), seed=0, diag=None):
                 # adaptive graph refinement (built on training patients only)
                 if cfg.use_agr and (t + 1) % cfg.agr_every == 0 and (t + 1) < cfg.rounds:
                     s.ei, s.ew, s.agr_sigma = knn_graph(h.numpy(), cfg.k_agr)
+                    if graph_hook is not None:
+                        graph_hook(s, s.ei, 'refined')
                     s.space, s.k = 'emb', cfg.k_agr
             states.append(copy.deepcopy(m.state_dict()))
             protos_up.append(loc_protos)

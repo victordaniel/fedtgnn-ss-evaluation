@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22995893.svg)](https://doi.org/10.5281/zenodo.22995893)
 
-Code for *"Federated Semi-Supervised Graph Neural Networks for the Prediction of Gestational and Other Diabetes from Tabular Records: A Leakage-Controlled Evaluation"*.
+Code for *"Do Federated Semi-Supervised Graph Neural Networks Improve Tabular Clinical Prediction? A Leakage-Controlled Evaluation in Diabetes"*.
 
 ## Layout
 | Path | Content |
@@ -39,7 +39,7 @@ bash run_all.sh               # ~10 h on a 4-core CPU; resumable
 `results/` contains the run-level metrics used in the paper. The per-patient test predictions (`main_preds.csv.gz`, used by `make_tables.py` for the calibration figure and by `repair_main.py`) are not included; `run.py main` regenerates them.
 
 ## Citation
-Daniel, G.V. *Federated Semi-Supervised Graph Neural Networks for the Prediction of Gestational and Other Diabetes from Tabular Records: A Leakage-Controlled Evaluation.* Manuscript submitted to *Diagnostics* (MDPI), 2026.
+Daniel, G.V. *Do Federated Semi-Supervised Graph Neural Networks Improve Tabular Clinical Prediction? A Leakage-Controlled Evaluation in Diabetes.* Manuscript submitted to *Diagnostics* (MDPI), 2026.
 
 Software: Daniel, G.V. *FedTGNN-SS: leakage-controlled evaluation* (v1.1.0). Zenodo, 2026. https://doi.org/10.5281/zenodo.22995893
 

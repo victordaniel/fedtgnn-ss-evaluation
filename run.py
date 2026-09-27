@@ -33,11 +33,14 @@ sys.path.insert(0, HERE)
 
 DEFAULT_SILOS = {'gdm_early': 3, 'gdm_diag': 3, 'pima': 2, 'early': 2}
 SCARCITY = [0.1, 0.3, 0.5, 0.7, 0.8]
+MAR_METHODS = ['FedTGNN-SS', 'FedAvg-LR', 'FedAvg-MLP', 'FedEns-RF', 'FedAvg-GCN', 'FedMatch-tab', 'Local-TGNN']
+TUNED_METHODS = ['FedAvg-LR (tuned)', 'FedAvg-MLP (tuned)', 'FedEns-RF (tuned)', 'FedEns-XGB (tuned)',
+                 'FedEns-SVM (tuned)']
 SILO_COLS = [f'silo{s}_{k}' for s in range(8) for k in ('n', 'pos', 'labeled', 'labeled_pos')]
 RESULT_COLUMNS = (['experiment', 'dataset', 'n_silos', 'rho', 'setting', 'alpha', 'repeat', 'fold',
                    'seed', 'method', 'auroc', 'auprc', 'sensitivity', 'specificity', 'ppv', 'npv',
                    'f1_pos', 'macro_f1', 'brier', 'cal_intercept', 'cal_slope', 'ece', 'threshold',
-                   'tp', 'tn', 'fp', 'fn', 'train_time_s', 'comm_bytes', 'n_pseudo', 'mia_auc']
+                   'tp', 'tn', 'fp', 'fn', 'train_time_s', 'comm_bytes', 'n_pseudo', 'mia_auc', 'selected']
                   + SILO_COLS + ['n_train', 'n_val', 'n_test', 'n_labeled'])
 KEY = ['experiment', 'dataset', 'n_silos', 'alpha', 'rho', 'setting', 'repeat', 'fold', 'method']
 
@@ -51,15 +54,24 @@ def run_task(task):
     import torch
     torch.set_num_threads(1)
     from fedtgnn import data, splits
-    from fedtgnn.baselines import METHODS
+    from fedtgnn.baselines import METHODS as _M
+    from fedtgnn.tuned import TUNED
+    METHODS = {**_M, **TUNED}
     from fedtgnn.context import build_context
     from fedtgnn.fedtgnn import train_fedtgnn
     from fedtgnn.metrics import evaluate, mia_auc, youden_threshold
 
-    X, y, _ = data.load(task['dataset'])
+    X, y, feat_names = data.load(task['dataset'])
+    risk = None
+    if task.get('risk_beta') is not None:        # informative label missingness
+        cols = [feat_names.index(c) for c in data.RISK_FEATURES[task['dataset']]]
+        R = X[:, cols]
+        R = (R - np.nanmean(R, 0)) / (np.nanstd(R, 0) + 1e-8)
+        risk = np.nanmean(R, 1)
     sp = None
     for s in splits.make_splits(y, task['rho'], task['n_silos'], task['alpha'],
-                                n_repeats=task['repeat'] + 1, n_folds=task['n_folds']):
+                                n_repeats=task['repeat'] + 1, n_folds=task['n_folds'],
+                                risk_score=risk, risk_beta=task.get('risk_beta') or 1.5):
         if s.repeat == task['repeat'] and s.fold == task['fold']:
             sp = s
             break
@@ -101,7 +113,12 @@ def run_task(task):
                    seed=seed, method=name)
         row.update(m)
         rows.append(row)
-        if task['save_preds']:
+        if task['save_preds'] and task['experiment'] == 'recal':
+            for part, ii, pp in (('val', vi, vp), ('test', ti, tp)):
+                preds.append(pd.DataFrame(dict(dataset=task['dataset'], method=name, repeat=sp.repeat,
+                                               fold=sp.fold, rho=task['rho'], part=part, idx=ii,
+                                               y=y[ii], p=pp)))
+        elif task['save_preds']:
             preds.append(pd.DataFrame(dict(dataset=task['dataset'], method=name, repeat=sp.repeat, fold=sp.fold,
                                            rho=task['rho'], idx=ti, y=y[ti], p=tp)))
         if diag:
@@ -134,6 +151,16 @@ def build_tasks(args):
         elif exp == 'ablation':
             settings.append(('ablation', DEFAULT_SILOS[ds], 0.5, args.rho or [0.5, 0.8],
                              list(ABLATIONS.items()), args.repeats))
+        elif exp == 'mar':
+            for beta in (1.0, 2.5):
+                settings.append((f'risk_beta={beta:g}', DEFAULT_SILOS[ds], 0.5, args.rho or [0.8],
+                                 [(m, None) for m in MAR_METHODS], args.repeats))
+        elif exp == 'tuned':
+            settings.append(('tuned', DEFAULT_SILOS[ds], 0.5, args.rho or [0.1, 0.8],
+                             [(m, None) for m in TUNED_METHODS], args.repeats))
+        elif exp == 'recal':
+            settings.append(('recal', DEFAULT_SILOS[ds], 0.5, args.rho or [0.8],
+                             [('FedTGNN-SS', None), ('FedAvg-LR', None)], args.repeats))
         elif exp == 'leakage':
             settings.append(('leakage', DEFAULT_SILOS[ds], 0.5, args.rho or [0.1, 0.8],
                              LEAKAGE, args.repeats))
@@ -148,13 +175,15 @@ def build_tasks(args):
                                           rho=rho, setting=setting, repeat=r, fold=f,
                                           n_folds=args.folds, jobs=jobs,
                                           save_preds=args.save_preds,
-                                          diag=(exp == 'main')))
+                                          diag=(exp == 'main'),
+                                          risk_beta=(float(setting.split('=')[1])
+                                                     if setting.startswith('risk_beta=') else None)))
     return tasks
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('experiment', choices=['main', 'hetero', 'clients', 'ablation', 'sweep', 'leakage'])
+    ap.add_argument('experiment', choices=['main', 'hetero', 'clients', 'ablation', 'sweep', 'leakage', 'recal', 'mar', 'tuned'])
     ap.add_argument('--datasets', nargs='+', default=['gdm_early', 'pima', 'early', 'gdm_diag'])
     ap.add_argument('--methods', nargs='+')
     ap.add_argument('--rho', nargs='+', type=float)
@@ -164,7 +193,7 @@ def main():
     ap.add_argument('--save-preds', action='store_true')
     ap.add_argument('--out', default=os.path.join(HERE, 'results'))
     args = ap.parse_args()
-    if args.experiment == 'main':
+    if args.experiment in ('main', 'recal'):
         args.save_preds = True
 
     os.makedirs(args.out, exist_ok=True)

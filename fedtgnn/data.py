@@ -85,6 +85,19 @@ def load_early():
     return X.values.astype(float), y, list(X.columns)
 
 
+# Established risk factors (all positively associated with the outcome a
+# priori) used ONLY to simulate informative, risk-dependent label
+# availability in the sensitivity analysis (PROTOCOL.md, Amendment 5).
+RISK_FEATURES = {
+    'gdm_early': ['Age', 'BMI', 'Family History', 'PCOS', 'Prediabetes',
+                  'Large Child or Birth Default'],
+    'gdm_diag': ['Age', 'BMI', 'Family History', 'PCOS', 'Prediabetes',
+                 'Large Child or Birth Default'],
+    'pima': ['Glucose', 'BMI', 'Age'],
+    'early': ['Polyuria', 'Polydipsia', 'Age'],
+}
+
+
 def load(name):
     if name == 'gdm_early':
         return load_gdm('early')
