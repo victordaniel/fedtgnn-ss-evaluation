@@ -1,0 +1,23 @@
+PRIMARY ANALYSIS:
+  dataset  rho metric  baseline  n_pairs  proposed_mean  baseline_mean     diff   ci_low  ci_high  p_corrected_t   p_wilcoxon  rank_biserial better_direction  p_corrected_t_holm  p_wilcoxon_holm  sig_better  sig_worse
+gdm_early  0.8  auroc FedAvg-LR       50       0.985294       0.976838 0.008456 0.001987 0.014925       0.011467 1.768719e-11       0.935686           higher            0.714297     9.197336e-10       False      False
+
+Holm-significant differences (corrected t-test), by dataset/metric:
+                    sig_better  sig_worse
+dataset   metric                         
+early     auprc              0          0
+          auroc              0          0
+          brier              0          0
+          macro_f1           0          0
+gdm_diag  auprc              0          0
+          auroc              3          0
+          brier              0          0
+          macro_f1           0          0
+gdm_early auprc              0          1
+          auroc              0          0
+          brier              0          0
+          macro_f1           0          0
+pima      auprc              0          0
+          auroc              0          0
+          brier              0         11
+          macro_f1           0          0
