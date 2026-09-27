@@ -1,0 +1,19 @@
+  dataset     method       recalibration  auroc_mean  auroc_std  brier_mean  brier_std  cal_intercept_mean  cal_intercept_std  cal_slope_mean  cal_slope_std  ece_mean  ece_std
+    early  FedAvg-LR                None       0.950      0.026       0.089      0.028               0.246              0.661           1.025          0.356     0.089    0.028
+    early  FedAvg-LR       Platt scaling       0.950      0.026       0.086      0.023              -0.029              0.481           1.074          0.498     0.084    0.022
+    early  FedAvg-LR Temperature scaling       0.950      0.026       0.089      0.024               0.241              0.538           1.231          0.591     0.093    0.025
+    early FedTGNN-SS                None       0.943      0.032       0.125      0.042               4.179              3.277           0.331          0.107     0.132    0.043
+    early FedTGNN-SS       Platt scaling       0.941      0.031       0.094      0.031              -0.087              0.559           1.015          0.337     0.088    0.032
+    early FedTGNN-SS Temperature scaling       0.941      0.031       0.104      0.029               0.814              0.552           1.245          0.352     0.116    0.029
+gdm_early  FedAvg-LR                None       0.977      0.008       0.043      0.015               0.139              0.772           0.858          0.159     0.048    0.020
+gdm_early  FedAvg-LR       Platt scaling       0.977      0.008       0.042      0.007               0.009              0.265           1.018          0.229     0.052    0.014
+gdm_early  FedAvg-LR Temperature scaling       0.977      0.008       0.044      0.014              -0.040              0.507           1.068          0.277     0.057    0.020
+gdm_early FedTGNN-SS                None       0.985      0.007       0.034      0.014              -2.079              2.804           0.378          0.057     0.034    0.014
+gdm_early FedTGNN-SS       Platt scaling       0.985      0.007       0.031      0.011               0.030              0.476           1.007          0.102     0.023    0.009
+gdm_early FedTGNN-SS Temperature scaling       0.985      0.007       0.031      0.012              -0.483              0.478           1.041          0.116     0.029    0.012
+     pima  FedAvg-LR                None       0.810      0.049       0.188      0.032              -0.332              0.918           0.736          0.216     0.141    0.051
+     pima  FedAvg-LR       Platt scaling       0.810      0.049       0.170      0.017               0.017              0.197           1.373          2.392     0.087    0.022
+     pima  FedAvg-LR Temperature scaling       0.810      0.049       0.182      0.020              -0.439              0.439           1.151          0.424     0.128    0.039
+     pima FedTGNN-SS                None       0.765      0.047       0.241      0.034              -0.282              1.200           0.186          0.051     0.230    0.039
+     pima FedTGNN-SS       Platt scaling       0.765      0.047       0.184      0.017               0.003              0.144           1.114          0.424     0.079    0.026
+     pima FedTGNN-SS Temperature scaling       0.765      0.047       0.189      0.018              -0.379              0.222           1.024          0.289     0.102    0.031

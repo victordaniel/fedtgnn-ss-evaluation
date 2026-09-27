@@ -49,6 +49,12 @@ def macro(name, value):
     macros.append(f'\\newcommand{{\\{name}}}{{{value}}}')
 
 
+def _label(m):
+    """Display name of an ablation variant (the prediction head is not
+    called 'calibrated', since it is not)."""
+    return m.replace('calibrated LR head', 'logistic-regression head').replace('&', r'\&')
+
+
 def fmt_p(p):
     return '<0.001' if p < 0.001 else f'{p:.3f}'
 
@@ -161,7 +167,7 @@ def table_ablation(ab):
                 else:
                     h = 1.96 * diff.std() / np.sqrt(len(diff))
                     cells += [f"{x.auroc.mean():.3f}", f"{diff.mean():+.3f} ({diff.mean() - h:+.3f}, {diff.mean() + h:+.3f})"]
-            lines.append(m.replace('&', r'\&') + ' & ' + ' & '.join(cells) + r'\\')
+            lines.append(_label(m) + ' & ' + ' & '.join(cells) + r'\\')
         lines += [r'\bottomrule', r'\end{tabularx}']
         with open(os.path.join(TAB, f'ablation_{ds}.tex'), 'w') as f:
             f.write('\n'.join(lines))
@@ -292,7 +298,7 @@ def table_ablation_summary(ab, rho=0.8):
             diff = (x - full).dropna()
             h = 1.96 * diff.std() / np.sqrt(len(diff))
             cells.append(f'{diff.mean():+.3f} ({diff.mean() - h:+.3f}, {diff.mean() + h:+.3f})')
-        lines.append(m.replace('&', r'\&') + ' & ' + ' & '.join(cells) + r'\\')
+        lines.append(_label(m) + ' & ' + ' & '.join(cells) + r'\\')
         if m == 'Full':
             lines.append(r'\midrule')
     lines += [r'\bottomrule', r'\end{tabularx}']
@@ -398,6 +404,101 @@ def table_recal():
         lines.pop()
     lines += [r'\bottomrule', r'\end{tabularx}']
     with open(os.path.join(TAB, 'recal.tex'), 'w') as f:
+        f.write('\n'.join(lines))
+
+
+def table_graph():
+    q, k, m = load('graph_quality.csv'), load('graph_knn.csv'), load('main.csv')
+    if q is None or k is None:
+        return
+    lines = [r'\begin{tabularx}{\textwidth}{llCCCCCC}', r'\toprule',
+             r'\textbf{Dataset} & \textbf{Graph} & \textbf{Edge homophily} & \textbf{Chance} & '
+             r'\textbf{Purity, positives} & \textbf{Purity, negatives} & \textbf{Labelled-neighbour agreement} & '
+             r'\textbf{Unlabelled with labelled neighbour}\\', r'\midrule']
+    for ds, n in SUM_DS:
+        d = q[(q.dataset == ds) & (q.rho == 0.8)]
+        if d.empty:
+            continue
+        for i, gname in enumerate(['initial', 'refined']):
+            x = d[d.graph == gname].mean(numeric_only=True)
+            lines.append(f"{n if i == 0 else ''} & {'feature space' if gname == 'initial' else 'refined (embeddings)'} & "
+                         f"{x.edge_homophily:.3f} & {x.random_homophily:.3f} & {x.purity_pos:.3f} & "
+                         f"{x.purity_neg:.3f} & {x.labelled_nb_purity:.3f} & {x.unl_with_labelled_nb:.3f}\\\\")
+    lines += [r'\bottomrule', r'\end{tabularx}']
+    with open(os.path.join(TAB, 'graph_quality.tex'), 'w') as f:
+        f.write('\n'.join(lines))
+    # local-neighbourhood models vs tabular models, same runs (repeats 0-2)
+    sel = ['FedAvg-LR', 'FedAvg-MLP', 'FedAvg-GCN', 'FedAvg-SAGE', 'FedTGNN-SS']
+    lines = [r'\begin{tabularx}{\textwidth}{lC' + 'C' * (len(sel) + 1) + '}', r'\toprule',
+             r'\textbf{Dataset} & $\boldsymbol{\rho}$ & \textbf{k-NN} & ' + ' & '.join(rf'\textbf{{{s}}}' for s in sel) + r'\\',
+             r'\midrule']
+    for ds, n in SUM_DS:
+        for r in (0.1, 0.8):
+            kk = k[(k.dataset == ds) & (k.rho == r)]
+            if kk.empty:
+                continue
+            mm = m[(m.dataset == ds) & (m.rho == r) & (m.repeat < 3)]
+            cells = [f'{kk.auroc.mean():.3f}'] + [f'{mm[mm.method == s].auroc.mean():.3f}' for s in sel]
+            lines.append(f"{n} & {r:g} & " + ' & '.join(cells) + r'\\')
+    lines += [r'\bottomrule', r'\end{tabularx}']
+    with open(os.path.join(TAB, 'graph_knn.tex'), 'w') as f:
+        f.write('\n'.join(lines))
+
+
+def table_mar():
+    a = load('mar.csv')
+    if a is None:
+        return
+    meths = ['FedTGNN-SS', 'FedAvg-LR', 'FedAvg-MLP', 'FedEns-RF', 'FedAvg-GCN', 'FedMatch-tab', 'Local-TGNN']
+    lines = [r'\begin{tabularx}{\fulllength}{ll' + 'C' * len(meths) + '}', r'\toprule',
+             r'\textbf{Dataset} & $\boldsymbol{\beta}$ & ' + ' & '.join(rf'\textbf{{{x}}}' for x in meths) + r'\\',
+             r'\midrule']
+    for ds, n in SUM_DS:
+        for i, st in enumerate(['risk_beta=1', 'risk_beta=2.5']):
+            d = a[(a.dataset == ds) & (a.setting == st)]
+            if d.empty:
+                continue
+            best = d.groupby('method').auroc.mean().max()
+            cells = []
+            for x in meths:
+                v = d[d.method == x].auroc.mean()
+                c = f'{v:.3f}'
+                cells.append(r'\underline{' + c + '}' if abs(v - best) < 5e-4 else c)
+            lines.append(f"{n if i == 0 else ''} & {st.split('=')[1]} & " + ' & '.join(cells) + r'\\')
+    lines += [r'\bottomrule', r'\end{tabularx}']
+    with open(os.path.join(TAB, 'mar.tex'), 'w') as f:
+        f.write('\n'.join(lines))
+
+
+def table_tuned():
+    t, m = load('tuned.csv'), load('main.csv')
+    if t is None:
+        return
+    base = ['FedAvg-LR', 'FedAvg-MLP', 'FedEns-RF', 'FedEns-XGB', 'FedEns-SVM']
+    lines = [r'\begin{tabularx}{\textwidth}{llCCC}', r'\toprule',
+             r'\textbf{Dataset, $\rho$} & \textbf{Method} & \textbf{Default} & \textbf{Tuned on validation} & '
+             r'\textbf{FedTGNN-SS minus tuned}\\', r'\midrule']
+    from stats import nb_corrected_t
+    for ds, n in SUM_DS:
+        for r in (0.1, 0.8):
+            mm = m[(m.dataset == ds) & (m.rho == r) & (m.repeat < 5)]
+            tt = t[(t.dataset == ds) & (t.rho == r)]
+            if tt.empty:
+                continue
+            prop = mm[mm.method == 'FedTGNN-SS'].set_index(['repeat', 'fold'])
+            for i, b in enumerate(base):
+                x = tt[tt.method == f'{b} (tuned)'].set_index(['repeat', 'fold'])
+                c = prop.index.intersection(x.index)
+                diff = (prop.loc[c, 'auroc'] - x.loc[c, 'auroc']).values
+                mean, ci, _ = nb_corrected_t(diff, prop.n_train.iloc[0], prop.n_test.iloc[0])
+                lines.append(f"{(n + ', ' + format(r, 'g')) if i == 0 else ''} & {b} & "
+                             f"{mm[mm.method == b].auroc.mean():.3f} & {x.auroc.mean():.3f} & "
+                             f"{mean:+.3f} ({ci[0]:+.3f}, {ci[1]:+.3f})\\\\")
+            lines.append(r'\midrule')
+    if lines[-1] == r'\midrule':
+        lines.pop()
+    lines += [r'\bottomrule', r'\end{tabularx}']
+    with open(os.path.join(TAB, 'tuned.tex'), 'w') as f:
         f.write('\n'.join(lines))
 
 
@@ -545,6 +646,9 @@ def main():
     table_gdm_predictors()
     table_leakage()
     table_recal()
+    table_graph()
+    table_mar()
+    table_tuned()
     if stats is not None:
         table_summary(df, stats, 0.8, 'auroc', 'summary_auroc')
         table_summary(df, stats, 0.8, 'brier', 'summary_brier')

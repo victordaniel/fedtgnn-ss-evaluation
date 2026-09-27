@@ -21,6 +21,9 @@ Code for *"Do Federated Semi-Supervised Graph Neural Networks Improve Tabular Cl
 | `stats.py` | prespecified statistics (Nadeau–Bengio corrected t-test, Wilcoxon, Holm) |
 | `gdm_ceiling.py` | exploratory: GDM baseline table, single-predictor and leave-one-out AUROC |
 | `run.py leakage` | exploratory: effect of four evaluation shortcuts (L1–L4) |
+| `recalibrate.py` | sensitivity: Platt / temperature recalibration on validation predictions (`run.py recal`) |
+| `graph_analysis.py` | exploratory: graph homophily, neighbourhood purity, k-NN comparison |
+| `run.py mar` / `run.py tuned` | sensitivity: risk-dependent label missingness; validation-tuned baselines (`fedtgnn/tuned.py`) |
 | `make_tables.py` | writes every manuscript table, figure and number macro to `../mdpi/generated/` |
 | `tests/` | leakage, count and metric unit tests |
 | `PROTOCOL.md` | prespecified analysis plan (+ Amendment 1) |
@@ -37,6 +40,9 @@ python -m pytest tests -q     # leakage / protocol checks
 bash run_all.sh               # ~10 h on a 4-core CPU; resumable
 ```
 `results/` contains the run-level metrics used in the paper. The per-patient test predictions (`main_preds.csv.gz`, used by `make_tables.py` for the calibration figure and by `repair_main.py`) are not included; `run.py main` regenerates them.
+
+## Reproducibility check
+The recalibration re-run (`run.py recal`, same partitions and seeds) reproduced the main-study FedTGNN-SS test AUROCs exactly: 0.985 (GDM-early), 0.765 (Pima) and 0.943 (Early-Stage), at 80% of labels withheld.
 
 ## Citation
 Daniel, G.V. *Do Federated Semi-Supervised Graph Neural Networks Improve Tabular Clinical Prediction? A Leakage-Controlled Evaluation in Diabetes.* Manuscript submitted to *Diagnostics* (MDPI), 2026.
