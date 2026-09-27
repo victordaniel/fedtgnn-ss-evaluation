@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "FedTGNN-SS: leakage-controlled evaluation of federated semi-supervised graph neural networks for gestational and other diabetes prediction"
+type: software
+license: MIT
+repository-code: "https://github.com/victordaniel/fedtgnn-ss-evaluation"
+authors:
+  - family-names: Daniel
+    given-names: G. Victor
+    orcid: "https://orcid.org/0000-0003-1021-1576"
+    affiliation: "School of Engineering, Anurag University, Hyderabad, India"
+  - family-names: M
+    given-names: Venkatesan
+    affiliation: "School of Engineering, Anurag University, Hyderabad, India"
+version: "1.0.0"
+date-released: "2026-09-27"
