@@ -1,6 +1,6 @@
 # FedTGNN-SS: corrected, leakage-controlled experiment code
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22995893.svg)](https://doi.org/10.5281/zenodo.22995893)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22998374.svg)](https://doi.org/10.5281/zenodo.22998374)
 
 Code for *"Do Federated Semi-Supervised Graph Neural Networks Improve Tabular Clinical Prediction? A Leakage-Controlled Evaluation in Diabetes"*.
 
@@ -47,6 +47,6 @@ The recalibration re-run (`run.py recal`, same partitions and seeds) reproduced 
 ## Citation
 Daniel, G.V. *Do Federated Semi-Supervised Graph Neural Networks Improve Tabular Clinical Prediction? A Leakage-Controlled Evaluation in Diabetes.* Manuscript submitted to *Diagnostics* (MDPI), 2026.
 
-Software: Daniel, G.V. *FedTGNN-SS: leakage-controlled evaluation* (v1.1.0). Zenodo, 2026. https://doi.org/10.5281/zenodo.22995893
+Software: Daniel, G.V. *FedTGNN-SS: leakage-controlled evaluation* (v1.2.0). Zenodo, 2026. https://doi.org/10.5281/zenodo.22998374
 
 Seeds: the split for repeat *r*, fold *f* uses seed `2026 + 1000 r + f`. Every row of `results/*.csv` stores its seed and per-silo counts.
