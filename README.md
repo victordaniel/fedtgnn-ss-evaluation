@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22987367.svg)](https://doi.org/10.5281/zenodo.22987367)
 
-Code for *"Federated Semi-Supervised Graph Neural Networks with Prototype-Guided Pseudo-Labeling for Gestational Diabetes Mellitus Prediction: A Simulation Study"*.
+Code for *"Federated Semi-Supervised Graph Neural Networks for the Prediction of Gestational and Other Diabetes from Tabular Records: A Leakage-Controlled Evaluation"*.
 
 ## Layout
 | Path | Content |
