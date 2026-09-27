@@ -1,0 +1,16 @@
+variable,type,gdm,no_gdm,p_value,missing_pct
+Age,continuous,36.0 ± 6.0,30.4 ± 5.2,1.4545652136979641e-148,0.0
+No of Pregnancy,continuous,2.3 ± 0.9,1.9 ± 0.8,1.8626826664361013e-28,0.0
+Gestation in previous Pregnancy,continuous,1.4 ± 0.8,0.7 ± 0.5,4.852540605605521e-175,0.0
+BMI,continuous,31.1 ± 4.5,23.7 ± 4.2,7.571609403351915e-286,30.666666666666664
+HDL,continuous,30.6 ± 12.3,49.7 ± 7.0,4.293403304312284e-140,28.397163120567377
+Family History,binary,980 (71.4%),776 (36.0%),5.692761288337452e-93,0.0
+unexplained prenetal loss,binary,686 (50.0%),600 (27.9%),3.308734445273762e-40,0.0
+Large Child or Birth Default,binary,777 (56.6%),484 (22.5%),3.4126547254797553e-94,0.0
+PCOS,binary,889 (64.8%),44 (2.0%),0.0,0.0
+Sys BP,continuous,144.8 ± 20.4,121.4 ± 18.6,1.3904813898487835e-120,48.36879432624113
+Dia BP,continuous,89.8 ± 10.8,76.3 ± 8.1,0.0,0.0
+OGTT,continuous,207.0 ± 46.8,140.3 ± 19.9,0.0,14.553191489361703
+Hemoglobin,continuous,15.1 ± 1.8,13.2 ± 1.5,3.895773886338235e-158,0.0
+Sedentary Lifestyle,binary,735 (53.6%),850 (39.5%),3.201621222669035e-16,0.0
+Prediabetes,binary,981 (71.5%),52 (2.4%),0.0,0.0

@@ -42,3 +42,18 @@ def sweep_configs():
             if p == 'k':
                 kw['k_agr'] = v
             yield f'{p}={v}', replace(BASE, **kw)
+
+
+# ---- leakage experiment (exploratory; PROTOCOL.md Amendment 2) -------------
+# (name, FedTGNNConfig or None, build_context kwargs, baseline method or None)
+LEAKAGE = [
+    ('Correct protocol (this study)', BASE, {}, None),
+    ('L1: test patients in training graph', BASE, {'transductive': True}, None),
+    ('L2: pooled final classifier', replace(BASE, leak_pooled_head=True), {}, None),
+    ('L3: preprocessing fitted on all data', BASE, {'leak_preprocess': True}, None),
+    ('L4: one cross-silo graph at inference', replace(BASE, leak_global_graph=True), {}, None),
+    ('All four shortcuts', replace(BASE, leak_pooled_head=True, leak_global_graph=True),
+     {'transductive': True, 'leak_preprocess': True}, None),
+    ('FedAvg-LR, correct protocol', None, {}, 'FedAvg-LR'),
+    ('FedAvg-LR, L3', None, {'leak_preprocess': True}, 'FedAvg-LR'),
+]

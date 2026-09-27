@@ -53,3 +53,17 @@ Measured run time was about 110 s of single-core CPU per GDM fold for all 18 met
 - Sweeps: 3 × 5 (Pima) and 2 × 5 (GDM-early).
 
 Only single-fold smoke tests had been inspected at the time of this amendment.
+
+## Amendment 2 (27 September 2026, after the primary results were known): exploratory analyses
+These two analyses were added **after** the main results had been examined. They are reported as exploratory and are not used for any confirmatory claim.
+1. **GDM cohort characteristics** (`gdm_ceiling.py`):
+   - baseline table by outcome;
+   - single-predictor AUROC (logistic regression, same 10 × 5 folds);
+   - leave-one-predictor-out AUROC.
+2. **Leakage experiment** (`run.py leakage`): FedTGNN-SS under four evaluation shortcuts, each alone and all combined, on the same partitions:
+   - L1: test patients in the training graph;
+   - L2: a pooled final classifier;
+   - L3: preprocessing fitted on all data;
+   - L4: one cross-silo graph at inference.
+
+   FedAvg-LR under L3 is included as a reference. Run with 5 repeats × 5 folds at ρ ∈ {0.1, 0.8} on GDM-early, Pima and Early-Stage. Paired differences from the correct protocol are summarised with 95% CIs (corrected resampled t-test).

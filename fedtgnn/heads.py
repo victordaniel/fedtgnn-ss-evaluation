@@ -82,9 +82,10 @@ def logreg(parts, mode='fedavg', C=0.5, rounds=30, local_epochs=5, lr=0.05,
     return out, comm
 
 
-def federated_lr_head(head_data, federated=True, seed=0):
+def federated_lr_head(head_data, federated=True, seed=0, pooled=False):
     """Calibrated head on [X || H] for FedTGNN-SS.
-    head_data: list of (silo, H_train, {name: (logits, H_eval)})."""
+    head_data: list of (silo, H_train, {name: (logits, H_eval)}).
+    pooled=True is the L2 shortcut of the leakage experiment (central fit)."""
     parts = []
     for s, h_tr, ev in head_data:
         Xtr = torch.cat([s.X, h_tr], 1)[s.lab]
@@ -92,6 +93,7 @@ def federated_lr_head(head_data, federated=True, seed=0):
         evX = {n: torch.cat([s.eval_X[n], ev[n][1]], 1) for n in ev}
         evX['members'] = Xtr           # for the membership-inference audit
         parts.append((Xtr, ytr, evX))
-    out, comm = logreg(parts, mode='fedavg' if federated else 'local', seed=seed)
+    mode = 'central' if pooled else ('fedavg' if federated else 'local')
+    out, comm = logreg(parts, mode=mode, seed=seed)
     out['_comm'] = comm
     return out

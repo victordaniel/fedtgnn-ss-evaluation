@@ -66,15 +66,21 @@ def run_task(task):
     splits.check_no_leakage(sp)
     rows, preds, diags = [], [], []
     ctx_cache = {}
-    for name, cfg in task['jobs']:
+    for job in task['jobs']:
+        name, cfg = job[0], job[1]
+        ctx_kw = job[2] if len(job) > 2 else {}
+        method = job[3] if len(job) > 3 else None
         k = cfg.k if cfg is not None else 10
-        if k not in ctx_cache:
-            ctx_cache[k] = build_context(X, y, sp, k=k)
-        ctx = ctx_cache[k]
+        ckey = (k, tuple(sorted(ctx_kw.items())))
+        if ckey not in ctx_cache:
+            ctx_cache[ckey] = build_context(X, y, sp, k=k, **ctx_kw)
+        ctx = ctx_cache[ckey]
         seed = sp.seed
         try:
             diag = [] if task['diag'] and name == 'FedTGNN-SS' else None
-            if cfg is None:
+            if method is not None:
+                out = METHODS[method](ctx, seed=seed)
+            elif cfg is None:
                 fn = METHODS[name]
                 out = fn(ctx, seed=seed, diag=diag) if name == 'FedTGNN-SS' else fn(ctx, seed=seed)
             else:
@@ -106,7 +112,7 @@ def run_task(task):
 
 
 def build_tasks(args):
-    from fedtgnn.variants import ABLATIONS, sweep_configs
+    from fedtgnn.variants import ABLATIONS, LEAKAGE, sweep_configs
     from fedtgnn.baselines import METHODS
 
     tasks = []
@@ -128,6 +134,9 @@ def build_tasks(args):
         elif exp == 'ablation':
             settings.append(('ablation', DEFAULT_SILOS[ds], 0.5, args.rho or [0.5, 0.8],
                              list(ABLATIONS.items()), args.repeats))
+        elif exp == 'leakage':
+            settings.append(('leakage', DEFAULT_SILOS[ds], 0.5, args.rho or [0.1, 0.8],
+                             LEAKAGE, args.repeats))
         elif exp == 'sweep':
             settings.append(('sweep', DEFAULT_SILOS[ds], 0.5, args.rho or [0.8],
                              list(sweep_configs()), args.repeats))
@@ -145,7 +154,7 @@ def build_tasks(args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('experiment', choices=['main', 'hetero', 'clients', 'ablation', 'sweep'])
+    ap.add_argument('experiment', choices=['main', 'hetero', 'clients', 'ablation', 'sweep', 'leakage'])
     ap.add_argument('--datasets', nargs='+', default=['gdm_early', 'pima', 'early', 'gdm_diag'])
     ap.add_argument('--methods', nargs='+')
     ap.add_argument('--rho', nargs='+', type=float)
@@ -171,11 +180,12 @@ def main():
     tasks = []
     for t in build_tasks(args):
         remaining = []
-        for name, cfg in t['jobs']:
+        for job in t['jobs']:
+            name = job[0]
             key = tuple(map(str, [t['experiment'], t['dataset'], t['n_silos'], _alpha_str(t['alpha']),
                                   t['rho'], t['setting'], t['repeat'], t['fold'], name]))
             if key not in done:
-                remaining.append((name, cfg))
+                remaining.append(job)
         if remaining:
             t['jobs'] = remaining
             tasks.append(t)

@@ -53,6 +53,9 @@ class FedTGNNConfig:
     use_prox: bool = True
     edge_attention: bool = True
     head: str = 'fedlr'        # 'fedlr' (calibrated federated LR on [X||H]) or 'gnn'
+    # evaluation shortcuts, used ONLY in the leakage experiment
+    leak_pooled_head: bool = False   # L2: final LR fitted on pooled data of all silos
+    leak_global_graph: bool = False  # L4: one cross-silo graph incl. eval patients at inference
 
 
 # ------------------------------------------------------------------ losses
@@ -154,6 +157,31 @@ def _forward_eval(model, silo, Z_eval, graph_space, agr_sigma):
                                        agr_sigma, silo.ei, silo.ew)
             logits, h = model(x, ei, ew)
     return logits[n_tr:], h[n_tr:], h[:n_tr]
+
+
+def _global_graph_inference(model, silos, k):
+    """L4 shortcut: a single symmetric k-NN graph over every silo's training
+    patients and every evaluation patient (cross-silo edges, eval patients
+    connected to each other). Returns head_data in the usual format."""
+    blocks, spans = [], []
+    for s in silos:
+        spans.append(('train', s, len(s.X)))
+        blocks.append(s.X)
+    for name in ('val', 'test'):
+        for s in silos:
+            spans.append((name, s, len(s.eval_X[name])))
+            blocks.append(s.eval_X[name])
+    Z = torch.cat(blocks)
+    ei, ew, _ = knn_graph(Z.numpy(), k)
+    model.eval()
+    with torch.no_grad():
+        lg, h = model(Z, ei, ew)
+    pos, parts = 0, {}
+    for kind, s, n in spans:
+        parts[(kind, s.sid)] = (lg[pos:pos + n], h[pos:pos + n])
+        pos += n
+    return [(s, parts[('train', s.sid)][1], {nm: parts[(nm, s.sid)] for nm in ('val', 'test')})
+            for s in silos]
 
 
 # ------------------------------------------------------------------ train
@@ -259,15 +287,30 @@ def train_fedtgnn(ctx, cfg=FedTGNNConfig(), seed=0, diag=None):
     # ---- inference at each silo (inductive)
     out = {'val': ([], []), 'test': ([], [])}
     head_data = []
-    for s, m in zip(silos, models):
-        ev = {}
-        for name in ('val', 'test'):
-            lg, h_ev, h_tr = _forward_eval(m, s, s.eval_X[name], s.space, s.agr_sigma)
-            ev[name] = (lg, h_ev)
-        head_data.append((s, h_tr, ev))
+    if cfg.leak_global_graph:
+        # L4 (leakage experiment only): one k-NN graph over all silos'
+        # training patients AND all evaluation patients, as in the original code
+        head_data = _global_graph_inference(models[0], silos, cfg.k)
+    else:
+        for s, m in zip(silos, models):
+            ev = {}
+            if getattr(s, 'eval_pos', None) is not None:
+                # L1 (leakage experiment only): eval patients are already nodes
+                m.eval()
+                with torch.no_grad():
+                    lg_all, h_all = m(s.X, s.ei, s.ew)
+                for name in ('val', 'test'):
+                    ev[name] = (lg_all[s.eval_pos[name]], h_all[s.eval_pos[name]])
+                h_tr = h_all
+            else:
+                for name in ('val', 'test'):
+                    lg, h_ev, h_tr = _forward_eval(m, s, s.eval_X[name], s.space, s.agr_sigma)
+                    ev[name] = (lg, h_ev)
+            head_data.append((s, h_tr, ev))
 
     if cfg.head == 'fedlr':
-        probs = federated_lr_head(head_data, federated=cfg.federated, seed=seed)
+        probs = federated_lr_head(head_data, federated=cfg.federated, seed=seed,
+                                  pooled=cfg.leak_pooled_head)
         if cfg.federated:
             comm_bytes += probs.pop('_comm')
         else:

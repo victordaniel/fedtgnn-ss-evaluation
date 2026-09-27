@@ -300,6 +300,76 @@ def table_ablation_summary(ab, rho=0.8):
         f.write('\n'.join(lines))
 
 
+def _tex(s):
+    return str(s).replace('%', r'\%').replace('±', r'$\pm$').replace('_', r'\_')
+
+
+def table_gdm_baseline():
+    b = load('gdm_baseline.csv')
+    if b is None:
+        return
+    lines = [r'\begin{tabularx}{\textwidth}{LCCCC}', r'\toprule',
+             r'\textbf{Predictor} & \textbf{GDM ($n=1372$)} & \textbf{No GDM ($n=2153$)} & '
+             r'\textbf{$p$} & \textbf{Missing (\%)}\\', r'\midrule']
+    for _, r in b.iterrows():
+        p = '<0.001' if r.p_value < 0.001 else f'{r.p_value:.3f}'
+        lines.append(f"{_tex(r.variable)} & {_tex(r.gdm)} & {_tex(r.no_gdm)} & {p} & {r.missing_pct:.0f}\\\\")
+    lines += [r'\bottomrule', r'\end{tabularx}']
+    with open(os.path.join(TAB, 'gdm_baseline.tex'), 'w', encoding='utf8') as f:
+        f.write('\n'.join(lines))
+
+
+def table_gdm_predictors():
+    sf, do = load('gdm_single_feature.csv'), load('gdm_drop_one.csv')
+    if sf is None or do is None:
+        return
+    full = do[do.dropped == '(none)'].auroc_mean.iloc[0]
+    do = do.set_index('dropped')
+    lines = [r'\begin{tabularx}{\textwidth}{LCC}', r'\toprule',
+             r'\textbf{Predictor} & \textbf{AUROC of predictor alone} & '
+             rf'\textbf{{Change on removal (all early predictors: {full:.3f})}}\\', r'\midrule']
+    for _, r in sf.iterrows():
+        rem = '--' if r.predictor == 'OGTT' else f"{do.loc[r.predictor, 'delta']:+.4f}"
+        lines.append(f"{_tex(r.predictor)} & {r.auroc_mean:.3f} $\\pm$ {r.auroc_sd:.3f} & {rem}\\\\")
+    lines += [r'\bottomrule', r'\end{tabularx}']
+    with open(os.path.join(TAB, 'gdm_predictors.tex'), 'w', encoding='utf8') as f:
+        f.write('\n'.join(lines))
+
+
+def table_leakage():
+    lk = load('leakage.csv')
+    if lk is None:
+        return
+    from stats import nb_corrected_t
+    dss = [(d, n) for d, n in SUM_DS if d in lk.dataset.unique()]
+    rhos = sorted(lk.rho.unique())
+    cols = [(d, n, r) for d, n in dss for r in rhos]
+    lines = [r'\begin{tabularx}{\fulllength}{>{\raggedright\arraybackslash}p{4.2cm}' + 'C' * len(cols) + '}',
+             r'\toprule',
+             r'\textbf{Evaluation} & ' + ' & '.join(rf'\textbf{{{n}, $\rho={r:g}$}}' for _, n, r in cols) + r'\\',
+             r'\midrule']
+    ref_of = lambda m: 'FedAvg-LR, correct protocol' if m.startswith('FedAvg-LR') else 'Correct protocol (this study)'
+    for m in list(dict.fromkeys(lk.method)):
+        cells = []
+        for d, _, r in cols:
+            x = lk[(lk.dataset == d) & (lk.rho == r)]
+            a = x[x.method == m].set_index(['repeat', 'fold'])
+            b = x[x.method == ref_of(m)].set_index(['repeat', 'fold'])
+            if m == ref_of(m):
+                cells.append(f'{a.auroc.mean():.3f}')
+                continue
+            common = a.index.intersection(b.index)
+            diff = (a.loc[common, 'auroc'] - b.loc[common, 'auroc']).values
+            mean, ci, p = nb_corrected_t(diff, a.n_train.iloc[0], a.n_test.iloc[0])
+            cells.append(f'{mean:+.3f} ({ci[0]:+.3f}, {ci[1]:+.3f})')
+        lines.append(m + ' & ' + ' & '.join(cells) + r'\\')
+        if m in ('All four shortcuts',):
+            lines.append(r'\midrule')
+    lines += [r'\bottomrule', r'\end{tabularx}']
+    with open(os.path.join(TAB, 'leakage.tex'), 'w', encoding='utf8') as f:
+        f.write('\n'.join(lines))
+
+
 # ---------------------------------------------------------------- figures
 def _style(ax):
     ax.grid(axis='y', color=GRID, linewidth=0.6)
@@ -440,6 +510,9 @@ def main():
     fig_pseudolabels(load('main_pseudolabels.csv'))
     table_ablation(load('ablation.csv'))
     table_ablation_summary(load('ablation.csv'))
+    table_gdm_baseline()
+    table_gdm_predictors()
+    table_leakage()
     if stats is not None:
         table_summary(df, stats, 0.8, 'auroc', 'summary_auroc')
         table_summary(df, stats, 0.8, 'brier', 'summary_brier')

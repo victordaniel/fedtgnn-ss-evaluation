@@ -19,6 +19,8 @@ Code for *"Federated Semi-Supervised Graph Neural Networks for the Prediction of
 | `fedtgnn/variants.py` | ablation variants and sensitivity sweeps |
 | `run.py` | resumable experiment runner (`main`, `hetero`, `clients`, `ablation`, `sweep`) |
 | `stats.py` | prespecified statistics (Nadeau–Bengio corrected t-test, Wilcoxon, Holm) |
+| `gdm_ceiling.py` | exploratory: GDM baseline table, single-predictor and leave-one-out AUROC |
+| `run.py leakage` | exploratory: effect of four evaluation shortcuts (L1–L4) |
 | `make_tables.py` | writes every manuscript table, figure and number macro to `../mdpi/generated/` |
 | `tests/` | leakage, count and metric unit tests |
 | `PROTOCOL.md` | prespecified analysis plan (+ Amendment 1) |
