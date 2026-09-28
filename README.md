@@ -30,7 +30,7 @@ Code for *"Do Federated Semi-Supervised Graph Neural Networks Improve Tabular Cl
 
 ## Data
 No data are redistributed here.
-- **GDM:** download `GDM.xlsx` from Kaggle, [*Gestational Diabetes Mellitus (GDM Data Set)*](https://www.kaggle.com/datasets/sumathisanthosh/gestational-diabetes-mellitus-gdm-data-set) (S. Santhosh; licence CC BY-NC-SA 4.0). Place it in `data/GDM.xlsx`, or set `GDM_XLSX`.
+- **GDM:** download `GDM.xlsx` from Kaggle, [*Gestational Diabetes Mellitus (GDM Data Set)*](https://www.kaggle.com/datasets/sumathisanthosh/gestational-diabetes-mellitus-gdm-data-set) (A. Sumathi and S. Meganathan, 2022, doi:10.34740/kaggle/dsv/3245285; licence CC BY-NC-SA 4.0). Place it in `data/GDM.xlsx`, or set `GDM_XLSX`.
 - **Pima Indians Diabetes** and **Early-Stage Diabetes Risk** (UCI) are downloaded automatically into `data_cache/`.
 
 ## Reproduce
